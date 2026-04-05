@@ -1,0 +1,88 @@
+import pygame
+import math
+
+# initialise pygame
+pygame.init()
+WIDTH, HEIGHT = 480, 320
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("737 Standby PFD Prototype")
+clock = pygame.time.Clock()
+
+# colours
+BLACK = (0, 0, 0)
+BLUE  = (0, 102, 204)
+BROWN = (153, 102, 51)
+GREY  = (100, 100, 100)
+
+# margins / geometry
+OUTER_GAP = 3
+TAPE_WIDTH = 80                                       # not used yet but you will need it later
+HORIZON_LEFT = TAPE_WIDTH + 2 * OUTER_GAP             # leave room for future left tape
+HORIZON_WIDTH = WIDTH - 2 * HORIZON_LEFT              # Width of artificial horizon area
+BLACK_HEIGHT = 40                   # Height of black bars at top and bottom of screen                           
+
+HORIZON_HEIGHT = HEIGHT - (BLACK_HEIGHT * 2)          # Height of combined orange and blue sections
+BLUE_HEIGHT = HORIZON_HEIGHT//2                       # Height of just the blue/orange centre sections
+MIDDLE = HEIGHT//2                                    # Y position of centre of screen
+
+#Segment constant
+ARC_HEIGHT = 10
+BOTTOM_RECT_HEIGHT = BLACK_HEIGHT - OUTER_GAP - ARC_HEIGHT                             # Height of black rectangle at bottom of screen
+
+#Bottom rectangle calculations
+BOTTOM_TOP = BLACK_HEIGHT + HORIZON_HEIGHT + OUTER_GAP + ARC_HEIGHT
+
+
+running = True
+while running:
+    for ev in pygame.event.get():
+        if ev.type == pygame.QUIT:
+            running = False
+
+    screen.fill(BLACK)
+
+    #Sky horizon    
+    pygame.draw.rect(screen, BLUE,
+                     (HORIZON_LEFT, BLACK_HEIGHT, HORIZON_WIDTH, BLUE_HEIGHT))
+    
+    #Ground horizon
+    pygame.draw.rect(screen, BROWN,
+                     (HORIZON_LEFT, MIDDLE, HORIZON_WIDTH, BLUE_HEIGHT))
+    
+    #Speedtape
+    pygame.draw.rect(screen, GREY, 
+                     (OUTER_GAP, OUTER_GAP, TAPE_WIDTH, HEIGHT - 2 * OUTER_GAP ))
+
+    #Altitude tape
+    pygame.draw.rect(screen, GREY, 
+                     ((OUTER_GAP * 2) + TAPE_WIDTH + HORIZON_WIDTH + OUTER_GAP, OUTER_GAP, TAPE_WIDTH, HEIGHT - 2*OUTER_GAP))
+
+
+
+  
+
+    # Bottom section: large circle with center far below
+    BOTTOM_CIRCLE_RADIUS = HORIZON_WIDTH + 300 # Adjust for roundness (larger = flatter)
+    BOTTOM_CIRCLE_CX = HORIZON_LEFT + HORIZON_WIDTH // 2
+    BOTTOM_CIRCLE_CY = 895  # Far below screen; increase for flatter arch
+    pygame.draw.circle(screen, GREY, (BOTTOM_CIRCLE_CX, BOTTOM_CIRCLE_CY), BOTTOM_CIRCLE_RADIUS)
+    #Lateral black rectangle
+    pygame.draw.rect(screen, BLACK, 
+                 (0, HEIGHT-OUTER_GAP, WIDTH, OUTER_GAP))
+    #LHS vertical black line
+    pygame.draw.rect(screen, BLACK, 
+                 (OUTER_GAP + TAPE_WIDTH, 0, OUTER_GAP, HEIGHT))
+    #RHS vertical black line
+    pygame.draw.rect(screen, BLACK, 
+                 (HORIZON_LEFT + HORIZON_WIDTH, 0, OUTER_GAP, HEIGHT))
+
+    
+
+
+
+
+
+    pygame.display.flip()
+    clock.tick(30)
+
+pygame.quit()
