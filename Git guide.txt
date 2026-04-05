@@ -1,0 +1,16 @@
+Git guide
+
+git status : check whats changed
+
+To save a new version:
+git add .
+git commit -m "Describe what changed"
+
+See previous versions: 
+git log --oneline
+Or for a cleaner version:
+git log --oneline --graph --decorate
+
+See whats changed before you commit: 
+git diff
+git diff tape_boxes.py (For a specific file)
