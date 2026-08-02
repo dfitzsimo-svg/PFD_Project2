@@ -1,0 +1,24 @@
+1. VCC -> Pi pin 1 (3.3V)
+2. GND -> Pi pin 6 (GND)
+3. CS -> Pi pin 24 (GPIO8 / CE0)
+4. RESET -> Pi pin 18 (GPIO24)
+5. D/C -> Pi pin 22 (GPIO25)
+6. SDI -> Pi pin 19 (GPIO10 / MOSI)
+7. SCK -> Pi pin 23 (GPIO11 / SCLK)
+8. LED -> Pi pin 1 (3.3V) for always-on backlight
+9. SDO (MISO) -> Pi pin 21 (GPIO 9 (MISO)
+
+Edit:
+After driver install
+Changed 4. RESET from pin 18 (GPIO42) to pin 11 (GPIO17)
+
+New pin layout:
+1. VCC -> Pi pin 1 (3.3V)
+2. GND -> Pi pin 6 (GND)
+3. CS -> Pi pin 24 (GPIO8 / CE0)
+4. RESET -> Pi pin 11 (GPIO17)
+5. D/C -> Pi pin 22 (GPIO25)
+6. SDI -> Pi pin 19 (GPIO10 / MOSI)
+7. SCK -> Pi pin 23 (GPIO11 / SCLK)
+8. LED -> Pi pin 1 (3.3V) for always-on backlight
+9. SDO (MISO) -> Pi pin 21 (GPIO 9 (MISO)

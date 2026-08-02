@@ -14,3 +14,11 @@ git log --oneline --graph --decorate
 See whats changed before you commit: 
 git diff
 git diff tape_boxes.py (For a specific file)
+
+
+Gihub day to day commands:
+git status
+git add .
+git commit -m "Describe what changed"
+git push
+
