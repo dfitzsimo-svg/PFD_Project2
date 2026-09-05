@@ -1,18 +1,9 @@
 # PFD_Project2
 
-Car PFD (Primary Flight Display) project - basically an aircraft-style instrument panel for a car, showing speed, altitude, and attitude (pitch/roll).
+Car PFD (Primary Flight Display) project - I am trying to make an aircraft-style instrument panel for a car, showing speed, altitude, and attitude (pitch/roll).
+I began by using a Raspberry Pi that I had laying around but the ILI9488 screen does not support 16-bit colour (RGB565) over SPI. This is a known limitation of the chip itself, not something specific to the Pi. I had to run the screen in 18-bit colour and write my own driver since there was no existing Linux library that handled this properly. Even after that, the performance was poor and the frame rate was slow.
 
-## Two versions in here
-
-**Root folder** - original Python/pygame version, built for a Raspberry Pi Zero 2W with an ILI9488 screen.
-
-**esp32_version/** - moved over to an ESP32 (Elegoo board) since it has way better library support for this screen than the Pi does. This is the active version now.
-
-## Pi version notes
-
-- ILI9488 needs 18-bit colour mode, not 16-bit RGB565 - RGB565 just doesn't work right over SPI on this chip
-- Fonts need to be created once, not inside the draw loop, or it lags badly
-- ili9488.py is the driver, exposes init_display / fill_screen / set_window / push_to_display
+I then switched to an ESP32 which has libraries like TFT_eSPI that handle everything on the driver side although I still have had to make a lot of tuning to my code to get the screen to be smooth.
 
 ## ESP32 version notes
 
@@ -30,11 +21,3 @@ Car PFD (Primary Flight Display) project - basically an aircraft-style instrumen
 - BMP280 - altitude (want to add a rotary encoder for QNH later)
 - MPU6050 - pitch/roll
 
-## To do
-
-- fix triangle duplication bug across bands
-- wire up GPS
-- wire up BMP280 + QNH encoder
-- wire up MPU6050
-- swap fake ramp values for real sensor data
-- figure out power/mounting for the car
