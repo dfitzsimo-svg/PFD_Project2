@@ -1,4 +1,4 @@
-// tape_boxes.cpp — updated version
+// tape_boxes.cpp — smooth-scrolling version
 
 #include "tape_boxes.h"
 
@@ -14,10 +14,10 @@ void drawSpeedTapeValues(TFT_eSPI &tft, int tapeLeft, int tapeTop, int tapeWidth
     float currentSpeed, int boxWidth, int boxHeight, int step, int lineSpacing,
     uint16_t textColour, uint16_t fillColour, uint16_t outlineColour) {
 
-    uint16_t tapeGrey = tft.color565(100, 100, 100);  // matches car_pfd.ino's GREY
+    uint16_t tapeGrey = tft.color565(100, 100, 100);
 
+    if (currentSpeed < 0) currentSpeed = 0;
     int displaySpeed = (int)round(currentSpeed);
-    if (displaySpeed < 0) displaySpeed = 0;
 
     int boxX = tapeLeft;
     int boxY = tapeTop + (tapeHeight - boxHeight) / 2;
@@ -25,7 +25,6 @@ void drawSpeedTapeValues(TFT_eSPI &tft, int tapeLeft, int tapeTop, int tapeWidth
     tft.fillRect(boxX, boxY, boxWidth, boxHeight, fillColour);
     tft.drawRect(boxX, boxY, boxWidth, boxHeight, outlineColour);
 
-    // Big number: background matches the black box it actually sits on - unchanged
     tft.setTextColor(textColour, fillColour);
     tft.setTextSize(2);
     tft.setTextDatum(MR_DATUM);
@@ -33,26 +32,48 @@ void drawSpeedTapeValues(TFT_eSPI &tft, int tapeLeft, int tapeTop, int tapeWidth
 
     tft.setViewport(tapeLeft, tapeTop, tapeWidth, tapeHeight);
 
-    int tapeBottom = tapeTop + tapeHeight;
-    int centreY = tapeTop + tapeHeight / 2;
-    int maxRows = tapeHeight / (2 * lineSpacing) + 2;
+    // ORIGINAL APPROACH (values derived from the reading, so the whole
+    // ladder jumped by one unit every time the reading changed):
+    //   int upVal = displaySpeed + i * step;
+    //   int downVal = displaySpeed - i * step;
+    //   int upY = centreY - i * lineSpacing;
+    //
+    // NEW APPROACH: tick values are fixed multiples of `step`. The
+    // reading decides where those fixed values sit on screen, so the
+    // strip slides continuously past the readout box instead of the
+    // numbers themselves changing.
+
+    // How many pixels one unit of speed moves the tape.
+    float pixelsPerUnit = (float)lineSpacing / (float)step;
+
+    int centreYLocal = tapeHeight / 2;
+
+    // Half the tape's span expressed in speed units, plus one step of
+    // margin so ticks scroll in from off-screen rather than popping in.
+    float halfRangeUnits = (tapeHeight / 2.0) / pixelsPerUnit + step;
+
+    // First tick value at or below the bottom of the visible range,
+    // snapped down to a multiple of step.
+    int startVal = (int)(floor((currentSpeed - halfRangeUnits) / step) * step);
+    int endVal   = (int)(ceil((currentSpeed + halfRangeUnits) / step) * step);
 
     tft.setTextSize(1);
     tft.setTextDatum(MR_DATUM);
-    tft.setTextColor(textColour, tapeGrey);  // CHANGED: background now matches
-                                              // the grey tape strip these
-                                              // scrolling numbers actually sit on
+    tft.setTextColor(textColour, tapeGrey);
 
-    for (int i = 1; i <= maxRows; i++) {
-        int upVal = displaySpeed + i * step;
-        int downVal = displaySpeed - i * step;
-        if (downVal < 0) downVal = 0;
+    for (int val = startVal; val <= endVal; val += step) {
+        if (val < 0) continue;  // no negative speeds
 
-        int upY = centreY - i * lineSpacing;
-        int downY = centreY + i * lineSpacing;
+        // Position is driven by the difference between this tick's
+        // fixed value and the live reading.
+        int yLocal = centreYLocal - (int)((val - currentSpeed) * pixelsPerUnit);
 
-        if (upY >= tapeTop && upY <= tapeBottom) tft.drawNumber(upVal, tapeWidth - 10, upY - tapeTop);
-        if (downY >= tapeTop && downY <= tapeBottom) tft.drawNumber(downVal, tapeWidth - 10, downY - tapeTop);
+        if (yLocal < 0 || yLocal > tapeHeight) continue;
+
+        // Skip ticks that would collide with the readout box.
+        if (abs(yLocal - centreYLocal) < (boxHeight / 2 + 4)) continue;
+
+        tft.drawNumber(val, tapeWidth - 10, yLocal);
     }
 
     tft.resetViewport();
@@ -65,7 +86,6 @@ void drawAltitudeTapeValues(TFT_eSPI &tft, int tapeLeft, int tapeTop, int tapeWi
     uint16_t tapeGrey = tft.color565(100, 100, 100);
 
     int displayAlt = (int)round(currentAltitude);
-    if (displayAlt < 0) displayAlt = 0;
 
     int boxX = tapeLeft;
     int boxY = tapeTop + (tapeHeight - boxHeight) / 2;
@@ -80,24 +100,29 @@ void drawAltitudeTapeValues(TFT_eSPI &tft, int tapeLeft, int tapeTop, int tapeWi
 
     tft.setViewport(tapeLeft, tapeTop, tapeWidth, tapeHeight);
 
-    int tapeBottom = tapeTop + tapeHeight;
-    int centreY = tapeTop + tapeHeight / 2;
-    int maxRows = tapeHeight / (2 * lineSpacing) + 2;
+    // Same smooth-scrolling approach as the speed tape above.
+    // Note: altitude is NOT clamped at zero - below sea level is
+    // legitimate, and with a mismatched QNH you can easily read
+    // negative on perfectly normal ground.
+    float pixelsPerUnit = (float)lineSpacing / (float)step;
+
+    int centreYLocal = tapeHeight / 2;
+    float halfRangeUnits = (tapeHeight / 2.0) / pixelsPerUnit + step;
+
+    int startVal = (int)(floor((currentAltitude - halfRangeUnits) / step) * step);
+    int endVal   = (int)(ceil((currentAltitude + halfRangeUnits) / step) * step);
 
     tft.setTextSize(1);
     tft.setTextDatum(ML_DATUM);
-    tft.setTextColor(textColour, tapeGrey);  // CHANGED: same fix
+    tft.setTextColor(textColour, tapeGrey);
 
-    for (int i = 1; i <= maxRows; i++) {
-        int upVal = displayAlt + i * step;
-        int downVal = displayAlt - i * step;
-        if (downVal < 0) downVal = 0;
+    for (int val = startVal; val <= endVal; val += step) {
+        int yLocal = centreYLocal - (int)((val - currentAltitude) * pixelsPerUnit);
 
-        int upY = centreY - i * lineSpacing;
-        int downY = centreY + i * lineSpacing;
+        if (yLocal < 0 || yLocal > tapeHeight) continue;
+        if (abs(yLocal - centreYLocal) < (boxHeight / 2 + 4)) continue;
 
-        if (upY >= tapeTop && upY <= tapeBottom) tft.drawNumber(upVal, 20, upY - tapeTop);
-        if (downY >= tapeTop && downY <= tapeBottom) tft.drawNumber(downVal, 20, downY - tapeTop);
+        tft.drawNumber(val, 20, yLocal);
     }
 
     tft.resetViewport();
