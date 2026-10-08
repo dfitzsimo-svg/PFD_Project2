@@ -1,0 +1,9 @@
+optimization:
+
+1) Remove giant circle at bottom to generate heading arc
+
+2) Add frame cap
+
+3) Move colors and constants to globals — compute once in setup() or at file scope.
+
+4) Skip draw calls for bands where content is entirely off-screen — several elements only appear in specific bands (APP/STD text only in band 0, triangles only in bands 0 and 3, etc). Band-skipping guards like triangles.cpp already uses would cut a lot of wasted work.

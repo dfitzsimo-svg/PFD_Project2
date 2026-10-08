@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "PFD_Modules")(type "KiCad")(uri "${KIPRJMOD}/PFD_Modules.kicad_sym")(options "")(descr "Custom module symbols for the PFD carrier board"))
+)

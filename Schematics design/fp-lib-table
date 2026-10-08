@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "PFD_Modules")(type "KiCad")(uri "${KIPRJMOD}/PFD_Modules.pretty")(options "")(descr "Custom module footprints for the PFD carrier board"))
+)

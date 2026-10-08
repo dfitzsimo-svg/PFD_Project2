@@ -1,0 +1,28 @@
+Components notes:
+
+NEO-6M GPS unit:
+- Contains its own regulator meaning it can accept 5V and down regulate it to run on 3.3 V. Regulator is meant to be low-dropout so should not be a problem to power it with 3.3V
+
+TP4056:
+- Does not contain the two 5.1 K Ohm resistors required for a USB C-C cable to detect a device is connected. Must use a USB A-C for charging
+- Red LED indicates charging, Green/Blue indicates battery is fully charged 
+- Max charging: 4.2 V/ 1A. If battery capacity is below 1000 mAh, use an additional resistor to lower charge current.
+
+IMPORTANT:
+
+- If charging with device powered on, TP4056 may never indicate that battery is fully charged and could charge indefinitely. This is because the TP4056 detects full charge when current drops to below 100 mAh. If device is connected, it may draw -250m Ah so TP4056 will never stop charging 
+
+- DO NOT MEASURE CURRENT BETWEEN B+ AND B- WITH MULTIMETER IN CURRENT MODE. WILL CAUSE A SHORT
+
+
+ESP32 WROOM Devkit
+- Vin pin comes before internal regulator so can be used to distribute power to higher voltage devices. Accepts input voltage from external source or raw from USB.
+- Regulator works like this: Vin - Regulator - Board + 3.3 V pin 
+
+
+
+LDL1117S33R (LDO)
+- Datasheet recommends input and output capacitors of 1uF and 4.7 uF respectively. The stability chart Fig.20 is only tested until 22 uF total. This counts for everything on the power rail. 
+- Datasheet recommends placing input and output capacitors as close as possible to LDO
+- Too low of a capacitance out of the LDO would cause output voltage to be unstable
+- Use X5R or X7R ceramics. The datasheet calls this out specifically.

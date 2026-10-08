@@ -1,0 +1,52 @@
+27/09/26
+- Spent too long trying to diagnose confusing power circuit problems. Turns out it was just a mix of faulty breadboard connections and exposed makeshift jumper wires which shorted. Added some tape to the jumper wires to stop the shorting.
+
+- Added potentiometer to control QNH setting and incorporated a window for the QNH value in top right of the screen. Will need some tuning in the future to optimize the range of pressure values I want to use. Will probably have to look into actual weather data or just talk to some of the pilots at work and see how much it varies by.
+
+ 
+
+
+28/09/26
+- Added "levelling" function allowing you to secure device at any angle and use rst button to rebase line the horizon
+
+- Debated a three layer "stacked pcb" design to save space in the y axis but have decided that a simple flat board pcb is best for first approach. 
+
+- Need to do some more research into making an Instagram/ blog account and what content I want to publish on it.
+
+- Performing a battery test to see how long device lasts for and also to test TP4056 protection and charging.
+  Noticed a false reading of 320 kmh from GPS during static battery duration test. Will need to investigate 
+
+Battery duration test results:
+Last for 5 hours
+Final voltage = 3.4 V
+
+
+29/09/26
+- Created a file structure for documenting design decisions and reasonings. Will hopefully be useful in future for improving quality of iterations between each prototype.
+
+
+
+30/09/26
+
+- Discovered that the TP4056 will only charge with a USB-A to C type charger as with  C-C, the IC requires detecting a device is plugged in using two 5.1 K Ohm resistors which the TP4056 does not have and therefore does not return a positive signal.
+
+- Debating between a dedicated 3.3 V power rail or inputting 5V into the ESP and then distributing from there.
+Will have to first perform a test to see if the GPS module can run reliably on a 3.3V input in which case Ill know everything is happy on 3.3 V and can start designing my PCB.
+
+
+02/10/26
+
+- Tested the GPS being powered on the 3.3 V rail and seemed to work fine. 
+
+- Noticed that during a bright day, the screen brightness is less than ideal. Might need to look into a different screen for the next prototype
+
+
+08/10/26
+
+- Have begun making my schematic on Kicad, its going slightly slow at first while I learn the ins and outs of the software.
+
+- I have decided to use an LDO in my PCB circuit to supply a fixed 3.3v to the whole board. This part will be smaller, cheaper and more efficient than the MT3068 and will not require tuning each time I make one. 
+
+- I have decided to make dedicated custom footprints for each part Instead of just using pin headers. I believe this will make it easy place each component on the PCB, allowing for a smaller PCB in general. I also think this will lower the risk of me making any mistakes when designing the PCB.
+
+- Instead of using pin headers, I will be soldering each component to the board itself. I think this will look much better and cuts down on parts plus assembly time. 

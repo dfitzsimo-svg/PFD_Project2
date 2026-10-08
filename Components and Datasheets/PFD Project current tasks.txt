@@ -1,0 +1,17 @@
+PFD Project current tasks:
+
+Make SVG schematic from Claude
+
+Research making prototyping board:
+Look for 3d printable harnesses
+
+Finalise decisions on IMU, screen and esp s3?
+With official looking documentation 
+
+Come up with a decision frame work log
+
+Log decision for battery size, include timer data from test
+
+Debate: Reachargeable battery or replaceable Double AA or equivalent 
+
+Test GPS module on 3.3V

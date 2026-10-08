@@ -1,3 +1,11 @@
 venv/
 __pycache__/
-*.pyc
+*.pyc.history/
+*-backups/
+*.lck
+*.bak
+fp-info-cache
+*-backups/
+*.lck
+*.bak
+fp-info-cache

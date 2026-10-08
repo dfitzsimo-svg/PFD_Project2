@@ -16,7 +16,18 @@ TFT_eSprite centerBand = TFT_eSprite(&tft);
 
 Adafruit_BMP280 bmp;
 bool bmpOK = false;
-float seaLevelhPa = 1013; //hPa
+
+//float seaLevelhPa = 1013; //hPa
+float seaLevelhPa = 1013.25; //hPa - now set by the QNH pot (see readQnhPot)
+
+// ---- QNH potentiometer ----
+// 10k linear pot: outer pins to 3V3 and GND, middle (wiper) to GPIO34.
+const int   QNH_POT_PIN = 34;
+const float QNH_MIN = 950.0;      // hPa at one end of the pot
+const float QNH_MAX = 1050.0;     // hPa at the other end
+const float QNH_STD = 1013.25;    // standard pressure - shown as "STD"
+const unsigned long QNH_READ_INTERVAL_MS = 100;  // 10 reads a second
+unsigned long lastQnhReadMs = 0;
 
 Adafruit_MPU6050 mpu;
 bool mpuOK = false;
@@ -29,6 +40,14 @@ bool mpuOK = false;
 const float PITCH_SMOOTHING = 0.15;
 float smoothedPitchDeg = 0.0;
 bool pitchInitialised = false;
+
+// ---- Level on boot ----
+// Whatever angle the unit is sitting at when it powers up is taken as
+// level. setup() averages LEVEL_SAMPLES readings and stores the result
+// here; every reading after that has it subtracted.
+float pitchOffsetDeg = 0.0;
+const int LEVEL_SAMPLES = 50;         // 50 readings...
+const int LEVEL_SAMPLE_DELAY_MS = 20; // ...20ms apart = 1 second
 
 // IMU read timing - independent of both the frame cap and the
 // barometer's 200ms interval. 20ms = 50Hz, fast enough that the
@@ -99,7 +118,68 @@ float currentPitchDeg = 0.0;
 const float FAKE_PITCH_AMPLITUDE_DEG = 5.0;
 const float FAKE_PITCH_PERIOD_S = 6.0;
 
+// ---- IMU helper ----
 
+// One raw pitch reading from the accelerometer, in degrees, before any
+// level offset or smoothing. Used both by the boot levelling in setup()
+// and by the 50Hz read in loop(), so the two always match.
+float readRawPitchDeg() {
+  sensors_event_t a, g, temp;
+  mpu.getEvent(&a, &g, &temp);
+
+  // Y axis as the tilt axis (rotated 90 deg from the original X).
+  return -atan2(a.acceleration.y,
+                sqrt(a.acceleration.x * a.acceleration.x +
+                     a.acceleration.z * a.acceleration.z))
+         * 180.0 / PI;
+}
+// ---- QNH pot helpers ----
+
+// Reads the pot (averaged over 8 samples) and converts it to hPa.
+float readPotHpa() {
+  long raw = 0;
+  for (int i = 0; i < 8; i++) raw += analogRead(QNH_POT_PIN);
+  raw /= 8;
+  return QNH_MIN + (QNH_MAX - QNH_MIN) * raw / 4095.0;
+}
+
+// Draws the baro setting where "STD" used to be. Shows "STD" at 1013,
+// otherwise the whole-hPa value. Clears the area first because "STD"
+// and "1013" are different widths.
+void drawBaroLabel() {
+  int rightEdge = HORIZON_LEFT + HORIZON_WIDTH - 8;
+  tft.fillRect(rightEdge - 60, BLACK_HEIGHT / 2 - 10, 60, 20, TFT_BLACK);
+
+  char baroText[8];
+  if (seaLevelhPa == QNH_STD) strcpy(baroText, "STD");
+  else snprintf(baroText, sizeof(baroText), "%d", (int)seaLevelhPa);
+
+  tft.setTextSize(2);
+  tft.setTextColor(colourAppGreen, TFT_BLACK);
+  tft.setTextDatum(MR_DATUM);
+  tft.drawString(baroText, rightEdge, BLACK_HEIGHT / 2);
+  tft.setTextDatum(TL_DATUM);
+}
+
+// Called every loop. Only acts every 100ms, and only changes the setting
+// in whole hPa steps once the knob has moved more than 0.6 hPa -
+// stops it flickering between two values.
+void readQnhPot(unsigned long nowMs) {
+  if (nowMs - lastQnhReadMs < QNH_READ_INTERVAL_MS) return;
+  lastQnhReadMs = nowMs;
+
+  float val = readPotHpa();
+  if (fabs(val - seaLevelhPa) > 0.6) {
+    seaLevelhPa = roundf(val);
+    if (seaLevelhPa == 1013.0) seaLevelhPa = QNH_STD;  // snap to exact standard
+
+    drawBaroLabel();
+    lastSensorReadMs = 0;   // read the barometer straight away with the new setting
+
+    Serial.print("QNH: ");
+    Serial.println(seaLevelhPa);
+  }
+}
 
 void drawStaticFrame() {
   tft.fillScreen(TFT_BLACK);
@@ -126,9 +206,12 @@ void drawStaticFrame() {
   tft.setTextColor(colourAppGreen, TFT_BLACK);
   tft.setTextDatum(ML_DATUM);
   tft.drawString("APP", HORIZON_LEFT + 8, BLACK_HEIGHT / 2);
-  tft.setTextDatum(MR_DATUM);
-  tft.drawString("STD", HORIZON_LEFT + HORIZON_WIDTH - 8, BLACK_HEIGHT / 2);
+
+  //tft.setTextDatum(MR_DATUM);
+  //tft.drawString("STD", HORIZON_LEFT + HORIZON_WIDTH - 8, BLACK_HEIGHT / 2);
   tft.setTextDatum(TL_DATUM);
+  drawBaroLabel();   // "STD" or the QNH value, e.g. "1009"
+
 
   {
     int cx = HORIZON_LEFT + HORIZON_WIDTH / 2;
@@ -208,14 +291,41 @@ void setup() {
     Serial.println("MPU6050 NOT found - pitch will stay at 0.");
   }
 
-  if (!mpu.begin()) {
-    Serial.println("MPU6050 NOT found - check wiring");
-  } else {
-    Serial.println("MPU6050 found OK");
+  // Removed: calling mpu.begin() a second time resets the MPU to its
+  // defaults, which undid the 2G / 250 deg / 21Hz settings above.
+  //if (!mpu.begin()) {
+  //  Serial.println("MPU6050 NOT found - check wiring");
+  //} else {
+  //  Serial.println("MPU6050 found OK");
+  //}
+
+    // ---- Level on boot ----
+  // Take whatever angle the unit is at right now as level. Short pause
+  // first so the MPU's 21Hz filter has settled after the settings above,
+  // then average one second of readings.
+  if (mpuOK) {
+    delay(200);
+    float sum = 0.0;
+    for (int i = 0; i < LEVEL_SAMPLES; i++) {
+      sum += readRawPitchDeg();
+      delay(LEVEL_SAMPLE_DELAY_MS);
+    }
+    pitchOffsetDeg = sum / LEVEL_SAMPLES;
+    Serial.print("Level set - pitch offset: ");
+    Serial.print(pitchOffsetDeg);
+    Serial.println(" deg");
   }
 
   gpsSerial.begin(9600, SERIAL_8N1, 16, 17);
   Serial.println("GPS serial started on UART2 (RX=16, TX=17)");
+
+    // QNH pot - read it once now so the first frame shows the right setting
+  analogReadResolution(12);                          // 0..4095
+  analogSetPinAttenuation(QNH_POT_PIN, ADC_11db);    // full 0..3.3V range
+  seaLevelhPa = roundf(readPotHpa());
+  if (seaLevelhPa == 1013.0) seaLevelhPa = QNH_STD;
+  Serial.print("QNH at startup: ");
+  Serial.println(seaLevelhPa);
 
 
   drawStaticFrame();
@@ -225,6 +335,12 @@ void setup() {
 
 void loop() {
   unsigned long nowMs = millis();
+
+  // ---- QNH pot (100ms) ----
+  // Before the barometer so a new setting is used on the very next read.
+  readQnhPot(nowMs);
+
+  // ---- Barometer read (200ms) ----
 
   // ---- Barometer read (200ms) ----
   if (bmpOK && (nowMs - lastSensorReadMs >= SENSOR_READ_INTERVAL_MS)) {
@@ -241,14 +357,18 @@ void loop() {
   if (mpuOK && (nowMs - lastImuReadMs >= IMU_READ_INTERVAL_MS)) {
     lastImuReadMs = nowMs;
 
-    sensors_event_t a, g, temp;
-    mpu.getEvent(&a, &g, &temp);
+    // Moved into readRawPitchDeg() so setup() can use the same maths:
+    //sensors_event_t a, g, temp;
+    //mpu.getEvent(&a, &g, &temp);
+    //
+    //// Y axis as the tilt axis (rotated 90 deg from the original X).
+    //float rawPitchDeg = -atan2(a.acceleration.y,
+    //                          sqrt(a.acceleration.x * a.acceleration.x +
+    //                               a.acceleration.z * a.acceleration.z))
+    //                    * 180.0 / PI;
 
-    // Y axis as the tilt axis (rotated 90 deg from the original X).
-    float rawPitchDeg = -atan2(a.acceleration.y,
-                              sqrt(a.acceleration.x * a.acceleration.x +
-                                   a.acceleration.z * a.acceleration.z))
-                        * 180.0 / PI;
+    // Raw reading minus the boot-time level offset.
+    float rawPitchDeg = readRawPitchDeg() - pitchOffsetDeg;
 
     if (!pitchInitialised) {
       smoothedPitchDeg = rawPitchDeg;
