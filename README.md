@@ -19,7 +19,8 @@ After I was happy with the breadboard prototype, I began by designing my PCB usi
 
 ## Sidenotes
 I originally began by using a Raspberry Pi that I had laying around but the pi lacked the RAM to push detailed graphics to the screen via SPI and also lacked a ready to use driver. This is a known limitation of the chip itself, not something specific to the Pi. I had to write my own driver since there was no existing Linux library that handled this properly. Even after that, the performance was poor and the frame rate was slow.
-## ESP32 version notes
+
+Change from Pi to ESP:
 
 - Same layout/logic as the Python version, ported to C++
 - Drawing straight to the screen caused bad flicker
