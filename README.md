@@ -9,15 +9,7 @@ Once I had sorted the graphical issues, I then moved on to incorporating all my 
 
 After I was happy with the breadboard prototype, I began by designing my PCB using KiCAD which I was new to but found it to be extremely intuitive and easy to learn. At this stage I have fully completed my schematic and am now trying to settle on a board layout for all the modules. 
 
-I originally began by using a Raspberry Pi that I had laying around but the pi lacked the RAM to push detailed graphics to the screen via SPI and also lacked a ready to use driver. This is a known limitation of the chip itself, not something specific to the Pi. I had to write my own driver since there was no existing Linux library that handled this properly. Even after that, the performance was poor and the frame rate was slow.
-## ESP32 version notes
-
-- Same layout/logic as the Python version, ported to C++
-- Drawing straight to the screen caused bad flicker
-- Tried a full-screen buffer to fix it but ran out of contiguous RAM
-- Fixed it by drawing in 4 horizontal bands instead, each with its own small buffer
-
-## Hardware (ESP32 version)
+## Hardware used
 
 - Elegoo ESP32
 - ILI9488 3.5" SPI screen, 480x320
@@ -25,3 +17,11 @@ I originally began by using a Raspberry Pi that I had laying around but the pi l
 - BMP280 - altitude (want to add a rotary encoder for QNH later)
 - MPU6050 - pitch/roll
 
+
+I originally began by using a Raspberry Pi that I had laying around but the pi lacked the RAM to push detailed graphics to the screen via SPI and also lacked a ready to use driver. This is a known limitation of the chip itself, not something specific to the Pi. I had to write my own driver since there was no existing Linux library that handled this properly. Even after that, the performance was poor and the frame rate was slow.
+## ESP32 version notes
+
+- Same layout/logic as the Python version, ported to C++
+- Drawing straight to the screen caused bad flicker
+- Tried a full-screen buffer to fix it but ran out of contiguous RAM
+- Fixed it by drawing in 4 horizontal bands instead, each with its own small buffer
