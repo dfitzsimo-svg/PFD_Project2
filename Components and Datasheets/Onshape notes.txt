@@ -1,0 +1,9 @@
+Onshape notes:
+
+Screen pin dimensions: 
+92 mm across
+49.5 mm vertical
+From spec sheet
+
+screen size: 52 x 76.5
+Behind screen size: 57 x 87
