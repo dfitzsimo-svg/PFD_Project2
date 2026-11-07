@@ -11,6 +11,7 @@
 #include "tape_boxes.h"
 #include "curved_scales.h"
 
+//This is the newest code
 TFT_eSPI tft = TFT_eSPI();
 TFT_eSprite centerBand = TFT_eSprite(&tft);
 
