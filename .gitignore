@@ -9,3 +9,4 @@ fp-info-cache
 *.lck
 *.bak
 fp-info-cache
+.history/
